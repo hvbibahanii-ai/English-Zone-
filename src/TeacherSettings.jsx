@@ -1,0 +1,154 @@
+import { useState, useEffect } from 'react'
+import { supabase } from './lib/supabase'
+
+export function TeacherSettingsPage() {
+  const [activeTab, setActiveTab] = useState('profile')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState({ text: '', type: '' })
+
+  const [settings, setSettings] = useState({
+    platform_name: 'Mr Abdelrahman Mohamed',
+    platform_subtitle: 'English Learning Platform',
+    welcome_message: 'WELCOME TO ENGLISH ZONE',
+    support_contact: '01014812293',
+    currency: 'EGP',
+    timezone: 'Africa/Cairo',
+    academic_year: '2026/2027',
+    instapay_number: '01014812293',
+    teacher_bio: ''
+  })
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const { data, error } = await supabase.from('platform_settings').select('*').maybeSingle()
+        if (error) throw error
+        if (data) setSettings(data)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadSettings()
+  }, [])
+
+  async function handleSave(e) {
+    e.preventDefault()
+    setSaving(true)
+    setMessage({ text: '', type: '' })
+
+    try {
+      const { error } = await supabase.from('platform_settings').update(settings).match({ instapay_number: '01014812293' })
+      if (error) throw error
+      setMessage({ text: 'تم حفظ جميع الإعدادات وتحديث المنصة بنجاح! ✨', type: 'success' })
+    } catch (err) {
+      setMessage({ text: err.message || 'فشل حفظ الإعدادات، يرجى التحقق من اتصال قاعدة البيانات.', type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) return <div className="student-loading"><div className="payment-loader" /><p>جاري تحميل إعدادات المنصة الحية...</p></div>
+
+  return (
+    <div className="teacher-dashboard-placeholder" style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto' }}>
+      <span className="eyebrow">ENGLISH ZONE / MANAGEMENT</span>
+      <h1>إعدادات المنصة البرمجية</h1>
+      <p>قم بإدارة هوية الموقع، بيانات التواصل ورقم كاش الحسابات من شاشة تحكم المستر الموحدة.</p>
+
+      {message.text && (
+        <div className={`auth-notice ${message.type === 'success' ? 'success' : 'error'}`} style={{ marginBottom: '20px' }}>
+          {message.text}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: '30px', marginTop: '20px' }}>
+        <aside style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {['profile', 'platform', 'payment', 'security'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`student-primary-button ${activeTab === tab ? '' : 'secondary'}`}
+              style={{ justifyContent: 'start', textTransform: 'capitalize', width: '100%', padding: '12px' }}
+            >
+              {tab === 'profile' && '👤 الملف الشخصي'}
+              {tab === 'platform' && '🌐 تهيئة المنصة'}
+              {tab === 'payment' && '💳 إعدادات الدفع'}
+              {tab === 'security' && '🔒 الحماية والأمان'}
+            </button>
+          ))}
+        </aside>
+
+        <main className="auth-card" style={{ background: '#fff', padding: '30px', borderRadius: '12px', border: '1px solid #eaeaea' }}>
+          <form onSubmit={handleSave}>
+            {activeTab === 'profile' && (
+              <div>
+                <h3 style={{ marginBottom: '15px' }}>تعديل بيانات المستر</h3>
+                <div className="auth-field" style={{ marginBottom: '15px' }}>
+                  <label>اسم المعلم الثابت للمنصة</label>
+                  <input type="text" value={settings.platform_name} disabled style={{ background: '#f5f5f5', cursor: 'not-allowed' }} />
+                </div>
+                <div className="auth-field">
+                  <label>نبذة عن المستر (Teacher Bio)</label>
+                  <textarea 
+                    rows={4} 
+                    value={settings.teacher_bio} 
+                    onChange={e => setSettings({...settings, teacher_bio: e.target.value})}
+                    placeholder="اكتب نبذة تظهر للطلاب في الصفحة الرئيسية..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'platform' && (
+              <div>
+                <h3 style={{ marginBottom: '15px' }}>تخصيص نصوص وعناوين الواجهة</h3>
+                <div className="auth-field" style={{ marginBottom: '15px' }}>
+                  <label>Platform Subtitle</label>
+                  <input type="text" value={settings.platform_subtitle} onChange={e => setSettings({...settings, platform_subtitle: e.target.value})} />
+                </div>
+                <div className="auth-field" style={{ marginBottom: '15px' }}>
+                  <label>رسالة الترحيب الرئيسية (Welcome Message)</label>
+                  <input type="text" value={settings.welcome_message} onChange={e => setSettings({...settings, welcome_message: e.target.value})} />
+                </div>
+                <div className="auth-field">
+                  <label>السنة الدراسية الحالية</label>
+                  <input type="text" value={settings.academic_year} onChange={e => setSettings({...settings, academic_year: e.target.value})} />
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'payment' && (
+              <div>
+                <h3 style={{ marginBottom: '15px' }}>إعدادات فودافون كاش و InstaPay</h3>
+                <div className="auth-field">
+                  <label>رقم محفظة استقبال الأموال وتأكيد التحويل المالي</label>
+                  <input type="text" value={settings.instapay_number} onChange={e => setSettings({...settings, instapay_number: e.target.value})} />
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'security' && (
+              <div>
+                <h3 style={{ marginBottom: '15px' }}>معلومات الجلسة والأمان</h3>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '10px' }}>الحساب الحالي: <strong>teacher@englishzone.com</strong></p>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>كود الوصول الثابت والآمن للمنصة: <code style={{ background: '#eee', padding: '2px 6px', borderRadius: '4px' }}>Abdelrahman3177</code></p>
+                <div className="auth-notice error" style={{ fontSize: '13px' }}>
+                  لا يمكن تغيير كود المعلم الثابت أو إيقاف جلسة المعلم من الإعدادات لضمان عدم اختراق المنصة التعليمية.
+                </div>
+              </div>
+            )}
+
+            {activeTab !== 'security' && (
+              <button className="auth-submit" type="submit" disabled={saving} style={{ marginTop: '20px', width: 'auto', minWidth: '180px' }}>
+                {saving ? 'جاري حفظ التعديلات حياً...' : 'حفظ جميع التغييرات حياً'}
+              </button>
+            )}
+          </form>
+        </main>
+      </div>
+    </div>
+  )
+}
