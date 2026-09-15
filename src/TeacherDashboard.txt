@@ -45,4 +45,3 @@ export default function TeacherDashboard() {
   const rangeRevenue = rangePayments.reduce((total, payment) => total + Number(payment.amount || 0), 0)
   const rangeExpensesTotal = rangeExpenses.reduce((total, expense) => total + Number(expense.amount || 0), 0)
   const searchResults = search.trim() ? [...data.students.filter((item) => item.full_name.toLowerCase().includes(search.toLowerCase()) || item.student_code.toLowerCase().includes(search.toLowerCase())), ...data.courses.filter((item) => item.name.toLowerCase().includes(search.toLowerCase())), ...data.exams.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))].slice(0, 6) : []
-}
